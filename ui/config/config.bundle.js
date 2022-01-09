@@ -13886,8 +13886,8 @@ class PartyTracker {
 }
 // EXTERNAL MODULE: ./resources/responses.ts
 var responses = __webpack_require__(7469);
-// EXTERNAL MODULE: ./ui/raidboss/data/raidboss_manifest.txt + 400 modules
-var raidboss_manifest = __webpack_require__(8035);
+// EXTERNAL MODULE: ./ui/raidboss/data/raidboss_manifest.txt + 402 modules
+var raidboss_manifest = __webpack_require__(3765);
 ;// CONCATENATED MODULE: ./ui/raidboss/raidboss_options.ts
 
 // These options are ones that are not auto-defined by raidboss_config.js.
