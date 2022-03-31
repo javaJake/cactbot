@@ -4,6 +4,7 @@ import { UnreachableCode } from '../../../../../resources/not_reached';
 import Outputs from '../../../../../resources/outputs';
 import { callOverlayHandler } from '../../../../../resources/overlay_plugin_api';
 import { Responses } from '../../../../../resources/responses';
+import Util from '../../../../../resources/util';
 import ZoneId from '../../../../../resources/zone_id';
 import { RaidbossData } from '../../../../../types/data';
 import { PluginCombatantState } from '../../../../../types/event';
@@ -31,6 +32,7 @@ export interface Data extends RaidbossData {
   act?: string;
   actHeadmarkers: { [name: string]: string };
   actFourThorn?: PluginCombatantState;
+  samActFourThorn?: PluginCombatantState;
   thornIds?: number[];
   jumpDir1?: string;
   kickTwo?: boolean;
@@ -891,8 +893,7 @@ const triggerSet: TriggerSet<Data> = {
       netRegexJa: NetRegexes.startsUsing({ id: '6A0C', source: 'ヘスペロス' }),
       promise: async (data, matches, _output) => {
         // Collect all Hesperos entities up front
-        let combatantName = null;
-        combatantName = matches.source;
+        const combatantName = matches.source;
 
         let combatantData = null;
         if (combatantName) {
@@ -1119,7 +1120,7 @@ const triggerSet: TriggerSet<Data> = {
       netRegexDe: NetRegexes.tether({ id: '00A[CD]', source: 'Hesperos' }),
       netRegexFr: NetRegexes.tether({ id: '00A[CD]', source: 'Hespéros' }),
       netRegexJa: NetRegexes.tether({ id: '00A[CD]', source: 'ヘスペロス' }),
-      condition: (data, matches) => data.act === '4' && matches.target === data.me,
+      condition: (data) => data.act === '4',
       durationSeconds: (data, matches) => data.actHeadmarkers[matches.target] === '012D' ? 12 : 9,
       suppressSeconds: 9999,
       promise: async (data, matches) => {
@@ -1133,7 +1134,15 @@ const triggerSet: TriggerSet<Data> = {
           return;
         }
 
-        data.actFourThorn = myThorn;
+        if (matches.target === data.me)
+          data.actFourThorn = myThorn;
+
+        for (const combatant of result.combatants) {
+          if (combatant.Job !== undefined && Util.jobEnumToJob(combatant.Job) === 'SAM') {
+            data.samActFourThorn = combatant;
+            break;
+          }
+        }
       },
       response: (data, matches, output) => {
         // cactbot-builtin-response
@@ -1181,7 +1190,7 @@ const triggerSet: TriggerSet<Data> = {
         if (id === undefined)
           return;
 
-        if (data.actFourThorn === undefined) {
+        if (data.actFourThorn === undefined || data.samActFourThorn === undefined) {
           if (id === '012C')
             return { infoText: output.blueTether!() };
           if (id === '012D')
@@ -1195,6 +1204,11 @@ const triggerSet: TriggerSet<Data> = {
         const y = data.actFourThorn.PosY - centerY;
         // Dirs: N = 0, NE = 1, ..., NW = 7
         const thornDir = Math.round(4 - 4 * Math.atan2(x, y) / Math.PI) % 8;
+        const samX = data.samActFourThorn.PosX - centerX;
+        const samY = data.samActFourThorn.PosY - centerY;
+        // Dirs: N = 0, NE = 1, ..., NW = 7
+        const samThornDir = Math.round(4 - 4 * Math.atan2(x, y) / Math.PI) % 8;
+        console.log({ samX: samX, samY: samY, samThornDir: samThornDir, x: x, y: y, thornDir: thornDir });
 
         const dirStr: string = {
           0: output.dirN!(),
